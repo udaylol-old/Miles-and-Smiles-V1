@@ -1,8 +1,26 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import authRoute from "./routes/authRoute.js";
 dotenv.config();
+
+const MONGODB_URI = process.env.MONGODB_URI;
+
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log(`MongoDB connected to ${MONGODB_URI}`))
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  });
+
+process.on("SIGINT", async () => {
+  await mongoose.connection.close();
+  console.log("MongoDB connection closed due to app termination");
+  process.exit(0);
+});
+
 const SERVER_PORT = process.env.SERVER_PORT;
 const SERVER_IP_ADDRESS = process.env.SERVER_IP_ADDRESS;
 
