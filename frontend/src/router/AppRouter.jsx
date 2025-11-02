@@ -7,7 +7,7 @@ function AppRouter() {
     <Router>
       <Routes>
         <Route path="/" element={<Auth />} />
-        {/* <Route path="/Home" element={<Home />} /> */}
+        <Route path="/Home" element={<Home />} />
       </Routes>
     </Router>
   );
