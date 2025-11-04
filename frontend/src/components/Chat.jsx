@@ -1,0 +1,217 @@
+import { useState, useEffect, useRef } from "react";
+
+const Chat = ({ socket, roomId }) => {
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isOpen, setIsOpen] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState("");
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Get current user from localStorage
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setCurrentUserId(user.id);
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleChatMessage = (chatData) => {
+      setMessages((prev) => [...prev, chatData]);
+    };
+
+    const handlePlayerJoined = (data) => {
+      const systemMessage = {
+        id: Date.now().toString(),
+        roomId,
+        userId: "system",
+        username: "System",
+        message: `${data.player.username} joined the room`,
+        timestamp: new Date().toISOString(),
+        isSystem: true,
+      };
+      setMessages((prev) => [...prev, systemMessage]);
+    };
+
+    const handlePlayerLeft = (data) => {
+      const systemMessage = {
+        id: Date.now().toString(),
+        roomId,
+        userId: "system",
+        username: "System",
+        message: `${data.player.username} left the room`,
+        timestamp: new Date().toISOString(),
+        isSystem: true,
+      };
+      setMessages((prev) => [...prev, systemMessage]);
+    };
+
+    const handleChatError = (data) => {
+      console.error("Chat error:", data.message);
+      // You could show a toast notification here
+    };
+
+    socket.on("chat-message", handleChatMessage);
+    socket.on("player-joined", handlePlayerJoined);
+    socket.on("player-left", handlePlayerLeft);
+    socket.on("chat-error", handleChatError);
+
+    // Welcome message
+    const welcomeMessage = {
+      id: Date.now().toString(),
+      roomId,
+      userId: "system",
+      username: "System",
+      message: "Welcome to the chat! Say hello to your opponent.",
+      timestamp: new Date().toISOString(),
+      isSystem: true,
+    };
+    setMessages([welcomeMessage]);
+
+    return () => {
+      socket.off("chat-message", handleChatMessage);
+      socket.off("player-joined", handlePlayerJoined);
+      socket.off("player-left", handlePlayerLeft);
+      socket.off("chat-error", handleChatError);
+    };
+  }, [socket, roomId]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    
+    if (!inputMessage.trim() || !socket || !socket.connected) {
+      return;
+    }
+
+    socket.emit("chat-message", {
+      roomId,
+      message: inputMessage.trim(),
+    });
+
+    setInputMessage("");
+    inputRef.current?.focus();
+  };
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  if (!socket) {
+    return null;
+  }
+
+  return (
+    <div className="fixed bottom-4 right-4 w-80 max-w-[calc(100vw-2rem)] bg-[--card] border border-gray-200 rounded-lg shadow-lg flex flex-col z-50">
+      {/* Chat Header */}
+      <div
+        className="flex items-center justify-between p-3 bg-[--surface] border-b border-gray-200 rounded-t-lg cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <h3 className="font-semibold text-[--text]">Chat</h3>
+        <button
+          className="text-gray-500 hover:text-gray-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+        >
+          {isOpen ? (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Chat Messages */}
+      {isOpen && (
+        <>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-96 min-h-[200px]">
+            {messages.map((msg) => {
+              const isOwnMessage = msg.userId === currentUserId;
+              const isSystem = msg.isSystem || msg.userId === "system";
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col ${
+                    isSystem ? "items-center" : isOwnMessage ? "items-end" : "items-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                      isSystem
+                        ? "bg-gray-100 text-gray-600 text-xs italic"
+                        : isOwnMessage
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                  >
+                    {!isSystem && (
+                      <div className="text-xs font-semibold mb-1 opacity-75">
+                        {msg.username}
+                      </div>
+                    )}
+                    <div className="break-words">{msg.message}</div>
+                    <div
+                      className={`text-xs mt-1 ${
+                        isSystem ? "text-gray-500" : isOwnMessage ? "text-blue-100" : "text-gray-500"
+                      }`}
+                    >
+                      {formatTime(msg.timestamp)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Chat Input */}
+          <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200">
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                maxLength={500}
+                disabled={!socket?.connected}
+              />
+              <button
+                type="submit"
+                disabled={!inputMessage.trim() || !socket?.connected}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Chat;
+
