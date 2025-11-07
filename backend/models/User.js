@@ -13,6 +13,12 @@ const userSchema = new Schema(
     // Pending friend requests
     incomingRequests: [{ type: Schema.Types.ObjectId, ref: "User" }],
     outgoingRequests: [{ type: Schema.Types.ObjectId, ref: "User" }],
+
+    // Favourite games
+    favouriteGames: {
+      type: [String], // array of game titles
+      default: [],    // empty by default
+    },
   },
   { timestamps: true }
 );
