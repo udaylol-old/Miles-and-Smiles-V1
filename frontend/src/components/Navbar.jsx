@@ -47,12 +47,20 @@ const Navbar = () => {
         <ThemeToggle />
 
         {isAuthenticated && (
-          <img
-            src={user && user.pfp_url ? user.pfp_url : "/profile.png"}
-            alt="profile"
-            title={user ? user.username : "Guest"}
-            className="w-8 h-8 rounded-full cursor-pointer hidden sm:block"
-          />
+          <div
+            onClick={() => navigate("/profile")}
+            className="hidden md:flex items-center space-x-2 cursor-pointer"
+            title={user ? user.username : "Profile"}
+          >
+            <img
+              src={user && user.pfp_url ? user.pfp_url : "/profile.png"}
+              alt="profile"
+              className="w-8 h-8 rounded-full"
+            />
+            <div className="hidden lg:flex flex-col text-left">
+              <span className="font-medium text-sm text-[--text]">{user?.username}</span>
+            </div>
+          </div>
         )}
 
   <AuthButtons isLoggedIn={isAuthenticated} onLogout={handleLogout} />
@@ -72,6 +80,9 @@ const Navbar = () => {
         onLogout={handleLogout}
         onLogin={handleLogin}
         menuOpen={menuOpen}
+        showFavoritesOnly={showFavoritesOnly}
+        setShowFavoritesOnly={setShowFavoritesOnly}
+        user={user}
       />
     </nav>
   );
