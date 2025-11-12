@@ -21,24 +21,38 @@ function ProfilePictureUploader({ token }) {
     const formData = new FormData();
     formData.append("image", file);
 
-    try {
-      setLoading(true);
-      const res = await axiosClient.post("/api/user/profile-picture", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  try {
+    setLoading(true);
+    const res = await axiosClient.post("/api/user/profile-picture", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      setUploadedUrl(res.data.pfp_url || res.data.imageUrl);
+    const newUrl = res.data.pfp_url;
+
+    if (newUrl) {
+      setUploadedUrl(newUrl);
+
+      // ✅ Update user object in localStorage
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      user.pfp_url = newUrl;
+      localStorage.setItem("user", JSON.stringify(user));
+
       alert("✅ Profile picture uploaded successfully!");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Upload failed");
-    } finally {
-      setLoading(false);
+    } else {
+      alert("⚠️ Upload succeeded but no image URL returned from server.");
     }
-  };
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Upload failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-950 text-gray-100">
