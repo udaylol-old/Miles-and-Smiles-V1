@@ -7,7 +7,7 @@ export default function SearchBar({ onChange, className = "", mobileVisible = fa
   const handleInput = (e) => {
     const value = e.target.value;
     setQuery(value);
-    onChange?.(value); // trigger real-time search callback
+    onChange?.(value);
   };
 
   return (
@@ -25,7 +25,6 @@ export default function SearchBar({ onChange, className = "", mobileVisible = fa
         onChange={handleInput}
         className="bg-transparent outline-none text-(--text) placeholder-(--muted) w-full text-sm md:text-base"
       />
-      <Search className="text-(--muted)" size={mobileVisible ? 16 : 18} />
       <Search
         className="text-(--muted) cursor-pointer"
         size={mobileVisible ? 16 : 18}
