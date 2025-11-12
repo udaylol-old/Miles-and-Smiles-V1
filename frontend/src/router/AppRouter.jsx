@@ -9,9 +9,7 @@ function AppRouter() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-
         <Route path="/auth" element={<Auth />} />
-
         <Route
           path="/games/:gameSlug"
           element={
