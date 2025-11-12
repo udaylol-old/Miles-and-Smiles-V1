@@ -167,7 +167,7 @@ const RoomSelection = ({ gameName, onRoomJoined }) => {
   if (mode === null) {
     return (
       <>
-        <Navbar />
+        {/* <Navbar /> */}
         <div className="min-h-screen bg-[--bg] text-[--text] flex items-center justify-center p-4">
           <div className="bg-[--card] rounded-xl shadow-lg p-8 max-w-md w-full border border-gray-200">
             <h1 className="text-3xl font-bold text-center mb-2">{gameName}</h1>
