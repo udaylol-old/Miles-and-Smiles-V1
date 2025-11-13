@@ -4,7 +4,6 @@
  */
 
 import { Server } from "socket.io";
-import jwt from "jsonwebtoken";
 import { setupChatHandler } from "./handlers/chatHandler.js";
 import { setupRoomHandler, handleRoomDisconnect } from "./handlers/roomHandler.js";
 import {
@@ -12,6 +11,7 @@ import {
   startTicTacToeGame,
   handleTicTacToePlayerLeave,
 } from "./handlers/ticTacToeHandler.js";
+import authenticateSocket from "../middlewares/socketMiddleware.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -27,27 +27,6 @@ const rooms = new Map();
 // Store active games in memory
 // roomId -> TicTacToeGame instance
 const games = new Map();
-
-// Socket authentication middleware
-function authenticateSocket(socket, next) {
-  const token = socket.handshake.auth?.token;
-
-  if (!token) {
-    console.error("❌ Socket auth failed: No token provided");
-    return next(new Error("Authentication error: No token provided"));
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    socket.userId = decoded.id;
-    socket.username = decoded.username;
-    console.log(`✅ Socket authenticated: ${decoded.username} (${decoded.id})`);
-    next();
-  } catch (err) {
-    console.error("❌ Socket auth failed: Invalid token", err.message);
-    return next(new Error("Authentication error: Invalid token"));
-  }
-}
 
 export default function setupSocket(server) {
   const io = new Server(server, {
@@ -93,4 +72,3 @@ export default function setupSocket(server) {
 
   return io;
 }
-

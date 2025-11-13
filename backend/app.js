@@ -12,6 +12,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // routes
+app.get("/", (req, res) => {
+  res.send("Miles and Smiles backend is working");
+});
 app.use("/api/auth", authRoute);
 app.use("/api/games", gameRoute);
 app.use("/api/user", userRoutes);
