@@ -7,7 +7,7 @@ export default function SearchBar({ onChange, className = "", mobileVisible = fa
   const handleInput = (e) => {
     const value = e.target.value;
     setQuery(value);
-    onChange?.(value); // trigger real-time search callback
+    onChange?.(value);
   };
 
   return (

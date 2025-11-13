@@ -1,14 +1,17 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();    
-dotenv.config();
 
 const MONGO_URI = process.env.MONGODB_URI;
 
-const gameSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  image: { type: String, required: true },
-});
+const gameSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    image: { type: String, required: true },
+  },
+  { versionKey: false }
+);
+
 
 const Game = mongoose.model("Game", gameSchema, "games");
 

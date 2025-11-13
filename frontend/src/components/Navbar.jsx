@@ -23,7 +23,9 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     localStorage.setItem("showFavoritesOnly", "false");
-    window.dispatchEvent(new CustomEvent("favoritesFilterChange", { detail: false }));
+    window.dispatchEvent(
+      new CustomEvent("favoritesFilterChange", { detail: false })
+    );
     navigate("/");
   };
 
@@ -40,7 +42,10 @@ const Navbar = () => {
         <ThemeToggle />
         {isAuthenticated && <Profile user={user} />}
         <AuthButtons isLoggedIn={isAuthenticated} onLogout={handleLogout} />
-        <button onClick={toggleMenu} className="md:hidden p-2 hover:bg-(--card) rounded-full cursor-pointer">
+        <button
+          onClick={toggleMenu}
+          className="md:hidden p-2 hover:bg-(--card) rounded-full cursor-pointer"
+        >
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
@@ -51,6 +56,7 @@ const Navbar = () => {
         onLogin={() => navigate("/auth")}
         menuOpen={menuOpen}
         user={user}
+        onSearch={(value) => setQuery(value)} // 👈 add this
       />
     </nav>
   );
