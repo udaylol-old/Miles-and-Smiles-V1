@@ -44,6 +44,11 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     applyAuth(null, null);
+
+    localStorage.setItem("showFavoritesOnly", "false");
+    window.dispatchEvent(
+      new CustomEvent("favoritesFilterChange", { detail: false })
+    );
   };
 
   const updateUser = (partial) => {
@@ -109,7 +114,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     updateUser,
-    applyAuth, // exposed for places that already have token/user response
+    applyAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

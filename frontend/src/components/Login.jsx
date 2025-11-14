@@ -17,7 +17,8 @@ export default function Login({ onMessage }) {
     try {
       onMessage && onMessage({ text: "Logging in...", type: "info" });
       const response = await axiosClient.post(`/api/auth/login`, formData);
-      applyAuth(response.data.token, response.data.user);
+      const { token, user } = response.data;
+      applyAuth(token, user);
 
       onMessage &&
         onMessage({

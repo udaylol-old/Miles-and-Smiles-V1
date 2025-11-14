@@ -7,7 +7,7 @@ function ProfilePictureUploader() {
   const [preview, setPreview] = useState("");
   const [uploadedUrl, setUploadedUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const { token, updateUser } = useAuth();
+  const { updateUser } = useAuth();
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -37,9 +37,7 @@ function ProfilePictureUploader() {
 
       if (newUrl) {
         setUploadedUrl(newUrl);
-
         updateUser({ pfp_url: newUrl });
-
         alert("✅ Profile picture uploaded successfully!");
       } else {
         alert("⚠️ Upload succeeded but no image URL returned from server.");
