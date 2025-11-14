@@ -20,9 +20,8 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
-  const handleLogin = () => {
-    () => navigate("/auth");
-  };
+  // fix: actually navigate when login is requested
+  const handleLogin = () => navigate("/auth");
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -39,7 +38,11 @@ const Navbar = () => {
         <Favourites isLoggedIn={isAuthenticated} />
         <ThemeToggle />
         {isAuthenticated && <Profile user={user} />}
-        <AuthButtons isLoggedIn={isAuthenticated} handleLogout={handleLogout} />
+        <AuthButtons
+          isLoggedIn={isAuthenticated}
+          handleLogout={handleLogout}
+          handleLogin={handleLogin}
+        />
         <button
           onClick={toggleMenu}
           className="md:hidden p-2 hover:bg-(--card) rounded-full cursor-pointer"
@@ -49,7 +52,7 @@ const Navbar = () => {
       </div>
 
       <MobileMenu
-        isAuthenticated={isAuthenticated}
+        isLoggedIn={isAuthenticated}
         handleLogout={handleLogout}
         handleLogin={handleLogin}
         menuOpen={menuOpen}
