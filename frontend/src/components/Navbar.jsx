@@ -15,17 +15,16 @@ import MobileMenu from "./navbar/MobileMenu.jsx";
 const Navbar = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
-  const { setQuery } = useSearch(); // 🔥 new
+  const { setQuery } = useSearch();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
+  const handleLogin = () => {
+    () => navigate("/auth");
+  };
   const handleLogout = () => {
     logout();
-    localStorage.setItem("showFavoritesOnly", "false");
-    window.dispatchEvent(
-      new CustomEvent("favoritesFilterChange", { detail: false })
-    );
     navigate("/");
   };
 
@@ -33,7 +32,6 @@ const Navbar = () => {
     <nav className="bg-(--surface) text-(--text) flex items-center justify-between px-4 md:px-6 py-3 shadow-md transition-colors duration-200 relative">
       <Logo username={user?.username} isLoggedIn={isAuthenticated} />
 
-      {/* 🔥 Real-time search */}
       <SearchBar onChange={(value) => setQuery(value)} />
 
       <div className="flex items-center space-x-3 md:space-x-4">
@@ -41,7 +39,7 @@ const Navbar = () => {
         <Favourites isLoggedIn={isAuthenticated} />
         <ThemeToggle />
         {isAuthenticated && <Profile user={user} />}
-        <AuthButtons isLoggedIn={isAuthenticated} onLogout={handleLogout} />
+        <AuthButtons isLoggedIn={isAuthenticated} handleLogout={handleLogout} />
         <button
           onClick={toggleMenu}
           className="md:hidden p-2 hover:bg-(--card) rounded-full cursor-pointer"
@@ -52,11 +50,11 @@ const Navbar = () => {
 
       <MobileMenu
         isAuthenticated={isAuthenticated}
-        onLogout={handleLogout}
-        onLogin={() => navigate("/auth")}
+        handleLogout={handleLogout}
+        handleLogin={handleLogin}
         menuOpen={menuOpen}
         user={user}
-        onSearch={(value) => setQuery(value)} // 👈 add this
+        onSearch={(value) => setQuery(value)}
       />
     </nav>
   );

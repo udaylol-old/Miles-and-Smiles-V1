@@ -13,7 +13,6 @@ export default function Friends({ mobileVisible = false }) {
   const visibility = mobileVisible ? "flex md:hidden" : "hidden md:flex";
   const iconSize = mobileVisible ? 18 : 20;
 
-  // Fetch user info when panel opens
   useEffect(() => {
     if (open) fetchUserData();
   }, [open]);
@@ -22,13 +21,11 @@ export default function Friends({ mobileVisible = false }) {
     try {
       const res = await axiosClient.get("/api/user/me");
       setUserData(res.data);
-      // intentionally avoid writing user to localStorage; keep in-memory only
     } catch (err) {
       console.error("❌ Error fetching user data:", err);
     }
   };
 
-  // Close popup when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -142,8 +139,7 @@ export default function Friends({ mobileVisible = false }) {
       await fetchUserData();
     } catch (err) {
       console.error("❌ Error removing friend:", err);
-      const errMsg =
-        err.response?.data?.message || "Failed to remove friend";
+      const errMsg = err.response?.data?.message || "Failed to remove friend";
       setMessage(errMsg);
     } finally {
       setLoading(false);
@@ -154,9 +150,7 @@ export default function Friends({ mobileVisible = false }) {
   // Render friends list with Remove button
   const renderFriends = (users, emptyText) => {
     if (!users || users.length === 0) {
-      return (
-        <p className="text-sm text-[--muted-foreground]">{emptyText}</p>
-      );
+      return <p className="text-sm text-[--muted-foreground]">{emptyText}</p>;
     }
 
     return (
@@ -197,9 +191,7 @@ export default function Friends({ mobileVisible = false }) {
   // Render incoming requests with Accept/Reject buttons
   const renderIncomingRequests = (users, emptyText) => {
     if (!users || users.length === 0) {
-      return (
-        <p className="text-sm text-[--muted-foreground]">{emptyText}</p>
-      );
+      return <p className="text-sm text-[--muted-foreground]">{emptyText}</p>;
     }
 
     return (
@@ -249,9 +241,7 @@ export default function Friends({ mobileVisible = false }) {
   // Render outgoing requests with Cancel button
   const renderOutgoingRequests = (users, emptyText) => {
     if (!users || users.length === 0) {
-      return (
-        <p className="text-sm text-[--muted-foreground]">{emptyText}</p>
-      );
+      return <p className="text-sm text-[--muted-foreground]">{emptyText}</p>;
     }
 
     return (

@@ -7,7 +7,7 @@ function ProfilePictureUploader() {
   const [preview, setPreview] = useState("");
   const [uploadedUrl, setUploadedUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const { token, updateUser } = useAuth();
+  const { updateUser } = useAuth();
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -23,32 +23,32 @@ function ProfilePictureUploader() {
     const formData = new FormData();
     formData.append("image", file);
 
-  try {
-    setLoading(true);
-    const res = await axiosClient.post("/api/user/profile-picture", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    try {
+      setLoading(true);
+      const res = await axiosClient.post(
+        "/api/user/profile-picture",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
-    const newUrl = res.data.pfp_url;
+      const newUrl = res.data.pfp_url;
 
-    if (newUrl) {
-      setUploadedUrl(newUrl);
-
-  updateUser({ pfp_url: newUrl });
-
-      alert("✅ Profile picture uploaded successfully!");
-    } else {
-      alert("⚠️ Upload succeeded but no image URL returned from server.");
+      if (newUrl) {
+        setUploadedUrl(newUrl);
+        updateUser({ pfp_url: newUrl });
+        alert("✅ Profile picture uploaded successfully!");
+      } else {
+        alert("⚠️ Upload succeeded but no image URL returned from server.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ Upload failed");
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err) {
-    console.error(err);
-    alert("❌ Upload failed");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-950 text-gray-100">
