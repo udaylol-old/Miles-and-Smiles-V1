@@ -1,15 +1,42 @@
 import User from "../models/User.js";
+import redisClient from "../config/redis.js"; // Add this import
+
+// Cache TTL (Time To Live) - 1 hour
+const CACHE_TTL = 3600;
 
 export async function getFavorites(req, res) {
   try {
     const userId = req.user.id;
+    const cacheKey = `user:${userId}:favorites`;
+
+    // Try to get from Redis cache first
+    const cachedFavorites = await redisClient.get(cacheKey);
+    
+    if (cachedFavorites) {
+      console.log('✅ Favorites from Redis cache');
+      return res.status(200).json({ 
+        favouriteGames: JSON.parse(cachedFavorites),
+        cached: true 
+      });
+    }
+
+    // If not in cache, get from MongoDB
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    return res.status(200).json({ favouriteGames: user.favouriteGames || [] });
+    const favouriteGames = user.favouriteGames || [];
+
+    // Store in Redis cache for next time
+    await redisClient.setEx(
+      cacheKey,
+      CACHE_TTL,
+      JSON.stringify(favouriteGames)
+    );
+
+    return res.status(200).json({ favouriteGames });
   } catch (err) {
     console.error("getFavorites error:", err);
     return res.status(500).json({ message: "Internal server error" });
@@ -33,20 +60,38 @@ export async function toggleFavorite(req, res) {
     const favouriteGames = user.favouriteGames || [];
     const gameIndex = favouriteGames.indexOf(gameTitle);
 
+    let action;
     if (gameIndex > -1) {
       favouriteGames.splice(gameIndex, 1);
+      action = "removed";
     } else {
       favouriteGames.push(gameTitle);
+      action = "added";
     }
 
     user.favouriteGames = favouriteGames;
     await user.save();
 
+    // Update Redis cache
+    const cacheKey = `user:${userId}:favorites`;
+    await redisClient.setEx(
+      cacheKey,
+      CACHE_TTL,
+      JSON.stringify(favouriteGames)
+    );
+
+    // Also increment/decrement game favorite count in Redis
+    const gameCountKey = `game:${gameTitle}:favorite_count`;
+    if (action === "added") {
+      await redisClient.incr(gameCountKey);
+    } else {
+      await redisClient.decr(gameCountKey);
+    }
+
     return res.status(200).json({
-      message:
-        gameIndex > -1
-          ? "Game removed from favorites"
-          : "Game added to favorites",
+      message: action === "removed" 
+        ? "Game removed from favorites"
+        : "Game added to favorites",
       favouriteGames: user.favouriteGames,
     });
   } catch (err) {
@@ -54,6 +99,7 @@ export async function toggleFavorite(req, res) {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
 
 export async function updateProfilePicture(req, res) {
   try {
