@@ -1,5 +1,6 @@
 import User from "../models/User.js";
-import redisClient from "../config/redis.js"; // Add this import
+import redisClient from "../config/redis.js";
+import { friendRequestQueue } from "../config/queue.js"; // NEW IMPORT
 
 // Cache TTL (Time To Live) - 1 hour
 const CACHE_TTL = 3600;
@@ -13,7 +14,7 @@ export async function getFavorites(req, res) {
     const cachedFavorites = await redisClient.get(cacheKey);
     
     if (cachedFavorites) {
-      console.log('✅ Favorites from Redis cache');
+      console.log('fetched favorites from Redis cache');
       return res.status(200).json({ 
         favouriteGames: JSON.parse(cachedFavorites),
         cached: true 
@@ -100,7 +101,6 @@ export async function toggleFavorite(req, res) {
   }
 }
 
-
 export async function updateProfilePicture(req, res) {
   try {
     const userId = req.user.id;
@@ -173,64 +173,47 @@ export async function updateField(req, res) {
   }
 }
 
+// 🔥 NEW: Async sendFriendRequest using Bull Queue
 export const sendFriendRequest = async (req, res) => {
   try {
     const { username } = req.body;
     const senderId = req.user.id;
+    const senderUsername = req.user.username;
 
-    const sender = await User.findById(senderId);
-    const receiver = await User.findOne({ username });
-
-    if (!receiver) {
-      return res.status(404).json({ message: "User not found" });
+    // Basic validation
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
     }
 
-    if (receiver._id.equals(sender._id)) {
-      return res
-        .status(400)
-        .json({ message: "You cannot send a request to yourself" });
-    }
-
-    if (sender.friends.includes(receiver._id)) {
-      return res.status(400).json({ message: "You are already friends" });
-    }
-
-    if (sender.outgoingRequests.includes(receiver._id)) {
-      return res.status(400).json({ message: "Friend request already sent" });
-    }
-
-    if (sender.incomingRequests.includes(receiver._id)) {
-      sender.friends.push(receiver._id);
-      receiver.friends.push(sender._id);
-
-      sender.incomingRequests = sender.incomingRequests.filter(
-        (id) => !id.equals(receiver._id)
-      );
-      receiver.outgoingRequests = receiver.outgoingRequests.filter(
-        (id) => !id.equals(sender._id)
-      );
-
-      await sender.save();
-      await receiver.save();
-
-      return res.json({
-        message: "Friend request accepted! You are now friends.",
+    if (username === senderUsername) {
+      return res.status(400).json({ 
+        message: "You cannot send a request to yourself" 
       });
     }
 
-    sender.outgoingRequests.push(receiver._id);
-    receiver.incomingRequests.push(sender._id);
+    // 🚀 Add job to queue (FAST - returns immediately!)
+    await friendRequestQueue.add({
+      type: 'friend_request_sent',
+      senderId: senderId,
+      senderUsername: senderUsername,
+      receiverUsername: username,
+      timestamp: new Date().toISOString(),
+    });
 
-    await sender.save();
-    await receiver.save();
+    // ✅ Return success immediately (don't wait for DB operations)
+    return res.status(200).json({ 
+      message: "Friend request sent!" 
+    });
 
-    res.json({ message: "Friend request sent!" });
   } catch (err) {
-    console.error("Error sending friend request:", err);
-    res.status(500).json({ message: "Server error while sending request" });
+    console.error("Error queueing friend request:", err);
+    return res.status(500).json({ 
+      message: "Server error while sending request" 
+    });
   }
 };
 
+// Keep all other functions unchanged
 export const acceptFriendRequest = async (req, res) => {
   try {
     const userId = req.user.id;

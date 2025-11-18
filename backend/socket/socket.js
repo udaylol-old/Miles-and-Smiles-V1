@@ -14,6 +14,7 @@ import {
   startTicTacToeGame,
   handleTicTacToePlayerLeave,
 } from "./handlers/ticTacToeHandler.js";
+import { setupNotificationHandler } from "./handlers/notificationHandler.js"; // NEW
 import authenticateSocket from "../middlewares/socketMiddleware.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -35,6 +36,9 @@ const games = new Map();
 // userId -> { socketId, roomId, role, online, lastSeen }
 const connectedUsers = new Map();
 
+// Store io instance globally so workers can access it
+let ioInstance = null;
+
 export default function setupSocket(server) {
   const io = new Server(server, {
     cors: {
@@ -43,11 +47,18 @@ export default function setupSocket(server) {
     },
   });
 
+  // Store io instance
+  ioInstance = io;
+
   // Use authentication middleware
   io.use(authenticateSocket);
 
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.username} (${socket.userId})`);
+
+    // Join user to their personal notification room
+    socket.join(socket.userId);
+    console.log(`👤 ${socket.username} joined notification room: ${socket.userId}`);
 
     // Update connected users map
     connectedUsers.set(socket.userId, {
@@ -79,6 +90,9 @@ export default function setupSocket(server) {
 
     // Set up TicTacToe game handlers
     setupTicTacToeHandler(socket, io, games, rooms, connectedUsers);
+
+    // Set up notification handlers (NEW)
+    setupNotificationHandler(socket, io);
 
     // Handle client requesting to rejoin a room after reconnect
     socket.on("rejoin-room", ({ roomId }) => {
@@ -160,6 +174,9 @@ export default function setupSocket(server) {
           `User disconnected: ${socket.username} (${socket.userId}) - ${reason}`
         );
 
+        // Leave their notification room
+        socket.leave(socket.userId);
+
         // Mark user as temporarily offline and keep room/game state
         const cu = connectedUsers.get(socket.userId) || {};
         connectedUsers.set(socket.userId, {
@@ -209,4 +226,12 @@ export default function setupSocket(server) {
   });
 
   return io;
+}
+
+// Export function to get io instance (for workers)
+export function getIO() {
+  if (!ioInstance) {
+    throw new Error("Socket.IO not initialized. Call setupSocket() first.");
+  }
+  return ioInstance;
 }

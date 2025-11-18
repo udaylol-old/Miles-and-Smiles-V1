@@ -35,7 +35,6 @@ export const getAllGames = async (req, res) => {
   }
 };
 
-// Optional: Add function to get most favorited games
 export const getMostFavoritedGames = async (req, res) => {
   try {
     // Get all game favorite counts from Redis
